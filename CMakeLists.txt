@@ -34,6 +34,9 @@ set(${PROJECT_NAME}_HEADERS
 add_library(${PROJECT_NAME}
   SHARED
   src/toppra.cc
+  src/piecewise-polynomial.hh
+  src/piecewise-polynomial.hh
+  src/serialization.hh
   ${${PROJECT_NAME}_HEADERS}
 )
 target_link_libraries(hpp-toppra PUBLIC hpp-core::hpp-core toppra::toppra)
@@ -42,15 +45,6 @@ install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION lib)
-
-hpp_add_plugin(toppra
-  EXPORT toppraTargets
-  SOURCES
-  src/piecewise-polynomial.hh
-  src/serialization.hh
-  src/toppra-plugin.cc
-  LINK_DEPENDENCIES PUBLIC hpp-toppra)
-#target_link_libraries(toppra PUBLIC hpp-toppra)
 
 message(STATUS "Found toppra ${toppra_VERSION}")
 
@@ -63,5 +57,3 @@ add_executable(unittests
 )
 add_test(unittests unittests)
 target_link_libraries(unittests hpp-manipulation::hpp-manipulation toppra::toppra hpp-toppra)# Catch2::Catch2)
-
-project_install_component(toppra)
