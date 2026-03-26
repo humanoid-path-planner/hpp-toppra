@@ -90,6 +90,23 @@ class Extract : public TimeParameterization {
 
 namespace pathOptimization {
 
+TOPPRAPtr_t TOPPRA::create(const core::ProblemConstPtr_t &p) {
+  return TOPPRAPtr_t(new TOPPRA(p));
+}
+
+TOPPRA::TOPPRA(const core::ProblemConstPtr_t &p)
+    : core::PathOptimizer(p),
+      effortScale(p->getParameter(PARAM_HEAD "effortScale").floatValue()),
+      velocityScale(p->getParameter(PARAM_HEAD "velocityScale").floatValue()),
+      accelerationLimits(
+          p->getParameter(PARAM_HEAD "accelerationLimits").vectorValue()),
+      solver(p->getParameter(PARAM_HEAD "solver").intValue()),
+      N(p->getParameter(PARAM_HEAD "N").intValue()),
+      interpolationMethod_(
+          p->getParameter(PARAM_HEAD "interpolationMethod").stringValue()),
+      gridpointMethod_(
+          p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()) {}
+
 TimeParameterizationPtr_t constantAccelerationParametrization(
     ::toppra::Vector const& t,
     ::toppra::Vector const& s,
@@ -259,12 +276,9 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
 
 ::toppra::LinearConstraintPtrs TOPPRA::constraints()
 {
-  const value_type effortScale =
-      problem()->getParameter(PARAM_HEAD "effortScale").floatValue();
-  const value_type velScale =
-      problem()->getParameter(PARAM_HEAD "velocityScale").floatValue();
-  const vector_t accLimits =
-      problem()->getParameter(PARAM_HEAD "accelerationLimits").vectorValue();
+  const value_type effortScale = this->effortScale;
+  const value_type velScale = this->velocityScale;
+  const vector_t accLimits = this->accelerationLimits;
 
   const pinocchio::Model& model = problem()->robot()->model();
 
@@ -304,8 +318,7 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
 
 TOPPRA::InterpolationMethod TOPPRA::interpolationMethod() const
 {
-  const std::string interpolationMethod =
-      problem()->getParameter(PARAM_HEAD "interpolationMethod").stringValue();
+  const std::string& interpolationMethod = this->interpolationMethod_;
   if (interpolationMethod == "hermite") {
     return Hermite;
   } else if (interpolationMethod == "constant_acceleration") {
@@ -320,8 +333,7 @@ TOPPRA::InterpolationMethod TOPPRA::interpolationMethod() const
 
 TOPPRA::GridpointMethod TOPPRA::gridpointMethod() const
 {
-  const std::string gridpointMethod =
-      problem()->getParameter(PARAM_HEAD "gridpointMethod").stringValue();
+  const std::string& gridpointMethod = this->gridpointMethod_;
   if (gridpointMethod == "param_space") {
     return EvenlyParamSpaced;
   } else if (gridpointMethod == "time_space") {
@@ -338,8 +350,7 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
 {
   inputSerialization(path);
 
-  const size_type solver =
-      problem()->getParameter(PARAM_HEAD "solver").intValue();
+  const size_type solver = this->solver;
 
   ::toppra::LinearConstraintPtrs v = std::move(constraints());
 
@@ -352,7 +363,7 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
     return flatten_path;
   }
 
-  size_type N = problem()->getParameter(PARAM_HEAD "N").intValue();
+  size_type N = this->N;
 
   std::vector<PathPtr_t> paths(flatten_path->numberPaths());
   for (auto i = 0ul; i < flatten_path->numberPaths(); ++i)
