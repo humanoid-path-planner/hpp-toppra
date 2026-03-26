@@ -24,11 +24,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(MODULE pyhpp/toppra)
+set(MODULE pyhpp_toppra)
 set(LIBNAME "bindings")
 set(SOURCE_FILES
-    pyhpp/toppra/toppra.cc
-    pyhpp/toppra/bindings.cc)
+    pyhpp_toppra/toppra.cc
+    pyhpp_toppra/bindings.cc)
 
 string(REGEX REPLACE "[/-]" "_" TARGET_NAME "${MODULE}")
 add_library(${TARGET_NAME} SHARED ${SOURCE_FILES})
