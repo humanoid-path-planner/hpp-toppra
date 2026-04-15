@@ -118,7 +118,6 @@ TEST_CASE("Test parameters") {
   auto problem = hc::Problem::create(device);
   hc::PathVectorPtr_t spline = makeCubicSpline(problem);
   auto opt = ht::pathOptimization::TOPPRA::create(problem);
-  hp::vector_t accLimits;
 
   problem->setParameter("PathOptimization/TOPPRA/interpolationMethod",
                         hc::Parameter(std::string("hermite")));
@@ -130,15 +129,11 @@ TEST_CASE("Test parameters") {
                         hc::Parameter(std::string("constant_acceleration")));
   CHECK_NOTHROW(opt->optimize(spline));
 
-  accLimits.resize(2);
-  problem->setParameter("PathOptimization/TOPPRA/accelerationLimits",
-                        hc::Parameter(accLimits));
+  opt->accelerationLimits.resize(2);
   CHECK_THROWS(opt->optimize(spline));
 
-  accLimits.resize(1);
-  accLimits << accLimit;
-  problem->setParameter("PathOptimization/TOPPRA/accelerationLimits",
-                        hc::Parameter(accLimits));
+  opt->accelerationLimits.resize(1);
+  opt->accelerationLimits << accLimit;
   CHECK_NOTHROW(opt->optimize(spline));
 }
 
