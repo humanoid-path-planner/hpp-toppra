@@ -28,19 +28,18 @@ set(MODULE pyhpp_toppra)
 set(LIBNAME "bindings")
 set(SOURCE_FILES pyhpp_toppra/toppra.cc pyhpp_toppra/bindings.cc)
 
-string(REGEX REPLACE "[/-]" "_" TARGET_NAME "${MODULE}")
-add_library(${TARGET_NAME} SHARED ${SOURCE_FILES})
+add_library(${MODULE} SHARED ${SOURCE_FILES})
 set_target_properties(
-    ${TARGET_NAME}
+    ${MODULE}
     PROPERTIES
         PREFIX ""
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}
         LIBRARY_OUTPUT_NAME ${LIBNAME}
 )
-target_link_boost_python(${TARGET_NAME} PUBLIC)
-target_link_libraries(${TARGET_NAME} PUBLIC eigenpy::eigenpy PRIVATE hpp-toppra)
+target_link_boost_python(${MODULE} PUBLIC)
+target_link_libraries(${MODULE} PUBLIC eigenpy::eigenpy PRIVATE hpp-toppra)
 
-install(TARGETS ${TARGET_NAME} DESTINATION ${PYTHON_SITELIB}/${MODULE})
+install(TARGETS ${MODULE} DESTINATION ${PYTHON_SITELIB}/${MODULE})
 
 # Write __init__.py file
 file(
