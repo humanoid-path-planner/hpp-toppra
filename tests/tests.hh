@@ -1,10 +1,9 @@
+#include <catch2/catch_test_macros.hpp>
 #include <hpp/core/path-vector.hh>
 #include <hpp/core/path/spline.hh>
 #include <hpp/core/problem.hh>
 #include <hpp/core/steering-method/spline.hh>
 #include <hpp/toppra/toppra.hh>
-
-#include "catch.hpp"
 
 namespace hc = hpp::core;
 namespace hp = hpp::pinocchio;

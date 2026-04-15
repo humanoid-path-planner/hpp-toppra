@@ -1,3 +1,4 @@
+#include <catch2/generators/catch_generators.hpp>
 #include <hpp/core/straight-path.hh>
 
 #include "tests.hh"
