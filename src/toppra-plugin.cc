@@ -1,7 +1,6 @@
-#include <hpp/toppra/toppra.hh>
-
 #include <hpp/core/plugin.hh>
 #include <hpp/core/problem-solver.hh>
+#include <hpp/toppra/toppra.hh>
 
 namespace hpp {
 namespace toppra {

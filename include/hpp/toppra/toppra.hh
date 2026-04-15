@@ -2,7 +2,6 @@
 #define HPP_TOPPRA_PATH_OPTIMIZATION_TOPPRA_HH
 
 #include <hpp/core/path-optimizer.hh>
-
 #include <toppra/toppra.hpp>
 
 namespace hpp {
@@ -14,20 +13,20 @@ typedef shared_ptr<TOPPRA> TOPPRAPtr_t;
 
 class TOPPRA : public core::PathOptimizer {
  public:
-   enum InterpolationMethod {
-     ConstantAcceleration,
-     Hermite,
-   };
-   enum GridpointMethod {
-     EvenlyTimeSpaced,
-     EvenlyParamSpaced,
-   };
+  enum InterpolationMethod {
+    ConstantAcceleration,
+    Hermite,
+  };
+  enum GridpointMethod {
+    EvenlyTimeSpaced,
+    EvenlyParamSpaced,
+  };
 
-  static TOPPRAPtr_t create(const core::ProblemConstPtr_t &p) {
+  static TOPPRAPtr_t create(const core::ProblemConstPtr_t& p) {
     return TOPPRAPtr_t(new TOPPRA(p));
   }
 
-  core::PathVectorPtr_t optimize(const core::PathVectorPtr_t &path);
+  core::PathVectorPtr_t optimize(const core::PathVectorPtr_t& path);
 
   // TODO remove when
   // https://github.com/humanoid-path-planner/hpp-core/pull/305

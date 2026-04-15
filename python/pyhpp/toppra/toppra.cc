@@ -38,11 +38,11 @@ using namespace boost::python;
 
 void exposeToppra() {
   class_<hpp::toppra::pathOptimization::TOPPRA,
-	 std::shared_ptr<hpp::toppra::pathOptimization::TOPPRA>, bases<hpp::core::PathOptimizer>,
-    boost::noncopyable> ("Toppra", no_init)
-    .def("__init__",
-	 make_constructor(&hpp::toppra::pathOptimization::TOPPRA::create));
+         std::shared_ptr<hpp::toppra::pathOptimization::TOPPRA>,
+         bases<hpp::core::PathOptimizer>, boost::noncopyable>("Toppra", no_init)
+      .def("__init__",
+           make_constructor(&hpp::toppra::pathOptimization::TOPPRA::create));
 }
 
-} // namespace toppra
-} // namespace pyhpp
+}  // namespace toppra
+}  // namespace pyhpp

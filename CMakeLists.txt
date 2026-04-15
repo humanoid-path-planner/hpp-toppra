@@ -16,19 +16,21 @@ set(PROJECT_DESCRIPTION "Bridge between HPP and TOPPRA.")
 
 find_package(jrl-cmakemodules QUIET CONFIG)
 if(jrl-cmakemodules_FOUND)
-  get_property(
-    JRL_CMAKE_MODULES
-    TARGET jrl-cmakemodules::jrl-cmakemodules
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-  message(STATUS "JRL cmakemodules found on system at ${JRL_CMAKE_MODULES}")
+    get_property(
+        JRL_CMAKE_MODULES
+        TARGET jrl-cmakemodules::jrl-cmakemodules
+        PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+    )
+    message(STATUS "JRL cmakemodules found on system at ${JRL_CMAKE_MODULES}")
 else()
-  message(STATUS "JRL cmakemodules not found. Let's fetch it.")
-  include(FetchContent)
-  FetchContent_Declare(
-    "jrl-cmakemodules"
-    GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git")
-  FetchContent_MakeAvailable("jrl-cmakemodules")
-  FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
+    message(STATUS "JRL cmakemodules not found. Let's fetch it.")
+    include(FetchContent)
+    FetchContent_Declare(
+        "jrl-cmakemodules"
+        GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git"
+    )
+    FetchContent_MakeAvailable("jrl-cmakemodules")
+    FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
 endif()
 
 include("${JRL_CMAKE_MODULES}/hpp.cmake")
@@ -45,33 +47,35 @@ add_project_dependency(toppra 0.6.2 REQUIRED)
 
 include(${HPP_CORE_CMAKE_PLUGIN})
 
-set(${PROJECT_NAME}_HEADERS
-  include/hpp/toppra/toppra.hh
-)
+set(${PROJECT_NAME}_HEADERS include/hpp/toppra/toppra.hh)
 
-add_library(${PROJECT_NAME}
-  SHARED
-  src/toppra.cc
-  src/piecewise-polynomial.hh
-  src/piecewise-polynomial.hh
-  src/serialization.hh
-  ${${PROJECT_NAME}_HEADERS}
+add_library(
+    ${PROJECT_NAME}
+    SHARED
+    src/toppra.cc
+    src/piecewise-polynomial.hh
+    src/piecewise-polynomial.hh
+    src/serialization.hh
+    ${${PROJECT_NAME}_HEADERS}
 )
 target_link_libraries(hpp-toppra PUBLIC hpp-core::hpp-core toppra::toppra)
 target_include_directories(hpp-toppra PUBLIC $<INSTALL_INTERFACE:include>)
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT ${TARGETS_EXPORT_NAME}
-  DESTINATION lib)
+install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
 message(STATUS "Found toppra ${toppra_VERSION}")
 
 add_subdirectory(python)
 
-add_executable(unittests
-  tests/tests.cc
-  tests/test-ill-formed-paths.cc
-  tests/test-path-serialization.cc
+add_executable(
+    unittests
+    tests/tests.cc
+    tests/test-ill-formed-paths.cc
+    tests/test-path-serialization.cc
 )
 add_test(unittests unittests)
-target_link_libraries(unittests hpp-manipulation::hpp-manipulation toppra::toppra hpp-toppra)# Catch2::Catch2)
+target_link_libraries(
+    unittests
+    hpp-manipulation::hpp-manipulation
+    toppra::toppra
+    hpp-toppra
+) # Catch2::Catch2)
