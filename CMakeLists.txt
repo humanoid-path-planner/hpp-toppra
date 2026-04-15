@@ -41,6 +41,9 @@ add_project_dependency(eigenpy REQUIRED)
 add_project_dependency(hpp-core REQUIRED)
 add_project_dependency(hpp-manipulation REQUIRED)
 add_project_dependency(toppra 0.6.2 REQUIRED)
+if(BUILD_TESTING)
+    find_package(Catch2 REQUIRED)
+endif()
 
 include(${HPP_CORE_CMAKE_PLUGIN})
 
@@ -59,20 +62,21 @@ target_link_libraries(hpp-toppra PUBLIC hpp-core::hpp-core toppra::toppra)
 target_include_directories(hpp-toppra PUBLIC $<INSTALL_INTERFACE:include>)
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
-message(STATUS "Found toppra ${toppra_VERSION}")
-
 add_subdirectory(python)
 
-add_executable(
-    unittests
-    tests/tests.cc
-    tests/test-ill-formed-paths.cc
-    tests/test-path-serialization.cc
-)
-add_test(unittests unittests)
-target_link_libraries(
-    unittests
-    hpp-manipulation::hpp-manipulation
-    toppra::toppra
-    hpp-toppra
-) # Catch2::Catch2)
+if(BUILD_TESTING)
+    add_executable(
+        unittests
+        tests/tests.cc
+        tests/test-ill-formed-paths.cc
+        tests/test-path-serialization.cc
+    )
+    add_test(unittests unittests)
+    target_link_libraries(
+        unittests
+        hpp-manipulation::hpp-manipulation
+        toppra::toppra
+        hpp-toppra
+        Catch2::Catch2WithMain
+    )
+endif()

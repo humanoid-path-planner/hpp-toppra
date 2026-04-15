@@ -1,6 +1,6 @@
-#define CATCH_CONFIG_MAIN
 #include "tests.hh"
 
+#include <catch2/generators/catch_generators.hpp>
 #include <hpp/pinocchio/urdf/util.hh>
 #include <iostream>
 #include <pinocchio/multibody/model.hpp>
