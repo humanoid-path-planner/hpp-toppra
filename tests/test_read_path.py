@@ -49,20 +49,20 @@ def plot_path(path):
     ts = np.linspace(path.timeRange[0], path.timeRange[1], num=10000)
     plt.subplot(3, 1, 1)
     lines = plt.plot(ts, [path.eval(t)[0] for t in ts])
-    for i, l in enumerate(lines):
-        l.set_label(f"q{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"q{i}")
     draw_vertical_lines(times)
     plt.legend()
     plt.subplot(3, 1, 2)
     lines = plt.plot(ts, [path.derivative(t, 1) for t in ts])
-    for i, l in enumerate(lines):
-        l.set_label(f"v{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"v{i}")
     draw_vertical_lines(times)
     plt.legend()
     plt.subplot(3, 1, 3)
     lines = plt.plot(ts, [path.derivative(t, 2) for t in ts], "+")
-    for i, l in enumerate(lines):
-        l.set_label(f"a{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"a{i}")
     draw_vertical_lines(times)
     plt.legend()
 
