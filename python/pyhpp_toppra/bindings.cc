@@ -28,8 +28,8 @@
 // DAMAGE.
 
 #include <boost/python.hpp>
-#include <pyhpp/util.hh>
 #include <pyhpp/toppra/toppra.hh>
+#include <pyhpp/util.hh>
 
 BOOST_PYTHON_MODULE(bindings) {
   INIT_PYHPP_MODULE;

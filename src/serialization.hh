@@ -9,18 +9,14 @@ namespace hpp {
 namespace core {
 namespace parser {
 template <class Archive>
-void serializePath(
-    DevicePtr_t& device,
-    PathPtr_t& path,
-    const std::string& filename)
-{
+void serializePath(DevicePtr_t& device, PathPtr_t& path,
+                   const std::string& filename) {
   typename std::conditional<Archive::is_saving::value, std::ofstream,
                             std::ifstream>::type fs(filename);
   Archive ar(fs);
-  if (device)
-    ar.insert(device->name(), device.get());
+  if (device) ar.insert(device->name(), device.get());
   ar.initialize();
-  //ar& hpp::serialization::make_nvp("device", device);
+  // ar& hpp::serialization::make_nvp("device", device);
   ar& hpp::serialization::make_nvp("path", path);
 }
 /// \}

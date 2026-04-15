@@ -1,5 +1,4 @@
 #include <hpp/core/time-parameterization/piecewise-polynomial.hh>
-
 #include <iomanip>
 
 namespace hpp {
@@ -99,7 +98,8 @@ class HPP_CORE_DLLAPI ShiftedPiecewisePolynomial : public TimeParameterization {
 
   size_t findPolynomialIndex(value_type& t) const {
     size_t seg_index = std::numeric_limits<size_t>::max();
-    const value_type dummy_precision = Eigen::NumTraits<value_type>::dummy_precision();
+    const value_type dummy_precision =
+        Eigen::NumTraits<value_type>::dummy_precision();
     assert(breakpoints_.size() == parameters_.cols() + 1);
     if (t < breakpoints_[0]) {
       if (t > breakpoints_[0] - dummy_precision) {
@@ -122,10 +122,11 @@ class HPP_CORE_DLLAPI ShiftedPiecewisePolynomial : public TimeParameterization {
     }
     if (seg_index == std::numeric_limits<size_t>::max()) {
       std::ostringstream oss;
-      constexpr auto max_precision {std::numeric_limits<value_type>::digits10 + 1};
-      oss << std::setprecision(max_precision) << "Position " << t <<
-        " is outside of range [ " << breakpoints_[0]
-          << ", " << breakpoints_[breakpoints_.size() - 1] << ']';
+      constexpr auto max_precision{std::numeric_limits<value_type>::digits10 +
+                                   1};
+      oss << std::setprecision(max_precision) << "Position " << t
+          << " is outside of range [ " << breakpoints_[0] << ", "
+          << breakpoints_[breakpoints_.size() - 1] << ']';
       throw std::runtime_error(oss.str());
     }
     t -= breakpoints_[seg_index];
@@ -137,7 +138,7 @@ class HPP_CORE_DLLAPI ShiftedPiecewisePolynomial : public TimeParameterization {
   ///   number of columns = number of polynomials N
   ParameterMatrix_t parameters_;
   Vector_t breakpoints_;  // size N + 1
-};                        // class ShiftedPiecewisePolynomial
+};  // class ShiftedPiecewisePolynomial
 
 }  // namespace timeParameterization
 }  // namespace core

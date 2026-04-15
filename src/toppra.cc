@@ -1,7 +1,3 @@
-#include <hpp/toppra/toppra.hh>
-
-#include <sstream>
-
 #include <hpp/core/path-optimizer.hh>
 #include <hpp/core/path-vector.hh>
 #include <hpp/core/path.hh>
@@ -9,7 +5,9 @@
 #include <hpp/core/problem.hh>
 #include <hpp/core/time-parameterization/piecewise-polynomial.hh>
 #include <hpp/pinocchio/device.hh>
+#include <hpp/toppra/toppra.hh>
 #include <pinocchio/multibody/model.hpp>
+#include <sstream>
 #include <toppra/algorithm/toppra.hpp>
 #include <toppra/constraint/joint_torque/pinocchio.hpp>
 #include <toppra/constraint/linear_joint_acceleration.hpp>
@@ -32,7 +30,7 @@ class PathWrapper : public ::toppra::GeometricPath {
  public:
   PathWrapper(PathPtr_t path)
       : ::toppra::GeometricPath((int)path->outputSize(),
-                              (int)path->outputDerivativeSize()),
+                                (int)path->outputDerivativeSize()),
         path_(path) {}
 
   ::toppra::Vector eval_single(::toppra::value_type time, int order) const {
@@ -90,11 +88,11 @@ class Extract : public TimeParameterization {
 
 namespace pathOptimization {
 
-TOPPRAPtr_t TOPPRA::create(const core::ProblemConstPtr_t &p) {
+TOPPRAPtr_t TOPPRA::create(const core::ProblemConstPtr_t& p) {
   return TOPPRAPtr_t(new TOPPRA(p));
 }
 
-TOPPRA::TOPPRA(const core::ProblemConstPtr_t &p)
+TOPPRA::TOPPRA(const core::ProblemConstPtr_t& p)
     : core::PathOptimizer(p),
       effortScale(p->getParameter(PARAM_HEAD "effortScale").floatValue()),
       velocityScale(p->getParameter(PARAM_HEAD "velocityScale").floatValue()),
@@ -108,10 +106,8 @@ TOPPRA::TOPPRA(const core::ProblemConstPtr_t &p)
           p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()) {}
 
 TimeParameterizationPtr_t constantAccelerationParametrization(
-    ::toppra::Vector const& t,
-    ::toppra::Vector const& s,
-    ::toppra::Vector const& sd)
-{
+    ::toppra::Vector const& t, ::toppra::Vector const& s,
+    ::toppra::Vector const& sd) {
   // Inputs
   // int N
   // s, sd, t
@@ -128,10 +124,11 @@ TimeParameterizationPtr_t constantAccelerationParametrization(
   // c_1 + 2 c_2 t[i] = sd[i]
   // c_0 + c_1 t[i] + c_2 t[i]**2 = s[i]
   constexpr int order = 2;
-  typedef core::timeParameterization::ShiftedPiecewisePolynomial<order> TimeParam_t;
+  typedef core::timeParameterization::ShiftedPiecewisePolynomial<order>
+      TimeParam_t;
   auto c = TimeParam_t::ParameterMatrix_t(order + 1, N);
   for (size_type i = 0; i < N; ++i) {
-    c(2, i) = (sd[i+1] - sd[i]) * (sd[i+1] + sd[i]) / (s[i+1] - s[i]) / 4;
+    c(2, i) = (sd[i + 1] - sd[i]) * (sd[i + 1] + sd[i]) / (s[i + 1] - s[i]) / 4;
     c(1, i) = sd[i];
     c(0, i) = s[i];
   }
@@ -140,10 +137,8 @@ TimeParameterizationPtr_t constantAccelerationParametrization(
 }
 
 TimeParameterizationPtr_t hermiteCubicSplineParametrization(
-    ::toppra::Vector const& t,
-    ::toppra::Vector const& s,
-    ::toppra::Vector const& sd)
-{
+    ::toppra::Vector const& t, ::toppra::Vector const& s,
+    ::toppra::Vector const& sd) {
   // Inputs
   // int N
   // s, sd, t
@@ -179,12 +174,10 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
 
 /// \param[out] id_subpaths \c id_subpaths[i] the index in gridpoints that
 ///             corresponds to the start of \c paths[i]
-::toppra::Vector evenlySpacedGridpoints(
-    std::vector<PathPtr_t> const& paths,
-    size_type const N,
-    value_type const maxSegmentLength,
-    std::vector<size_type>& id_subpaths)
-{
+::toppra::Vector evenlySpacedGridpoints(std::vector<PathPtr_t> const& paths,
+                                        size_type const N,
+                                        value_type const maxSegmentLength,
+                                        std::vector<size_type>& id_subpaths) {
   std::vector<value_type> S;
   S.reserve(N + paths.size() - 1);
 
@@ -208,29 +201,24 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
 ///             corresponds to the start of \c paths[i]
 ::toppra::Vector evenlyTimeSpacedGridpoints(
     std::shared_ptr<PathWrapper> pathWrapper,
-    std::vector<PathPtr_t> const& paths,
-    size_type const N,
-    value_type const maxSegmentLength,
-    std::vector<size_type>& id_subpaths)
-{
+    std::vector<PathPtr_t> const& paths, size_type const N,
+    value_type const maxSegmentLength, std::vector<size_type>& id_subpaths) {
   ::toppra::Vector initialS(paths.size() + 1);
 
-  //id_subpaths.reserve(paths.size() + 1);
+  // id_subpaths.reserve(paths.size() + 1);
 
   initialS[0] = 0.0;
-  //id_subpaths.push_back(0);
+  // id_subpaths.push_back(0);
   for (auto i = 0ul; i < paths.size(); ++i)
-    initialS[i+1] = initialS[i] + paths[i]->length();
+    initialS[i + 1] = initialS[i] + paths[i]->length();
 
   const double maxErrorThreshold = 1e-4;
   const int maxIterations = 100;
-  ::toppra::Vector gridpoints (pathWrapper->proposeGridpoints(
-      maxErrorThreshold,
-      maxIterations,
-      maxSegmentLength,
-      static_cast<int>(N),
+  ::toppra::Vector gridpoints(pathWrapper->proposeGridpoints(
+      maxErrorThreshold, maxIterations, maxSegmentLength, static_cast<int>(N),
       initialS));
-  // id_subpaths[i] is the index in gridpoints that corresponds to the start of paths[i], aka initialS[i]
+  // id_subpaths[i] is the index in gridpoints that corresponds to the start of
+  // paths[i], aka initialS[i]
   int k = 0;
   for (int i = 0; i < initialS.size(); ++i) {
     bool found = false;
@@ -241,7 +229,8 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
       }
     }
     if (!found)
-      throw std::logic_error("Initial gridpoints not found in proposed gridpoints.");
+      throw std::logic_error(
+          "Initial gridpoints not found in proposed gridpoints.");
     id_subpaths[i] = k;
   }
   return gridpoints;
@@ -250,14 +239,13 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
 void TOPPRA::inputSerialization(PathPtr_t path) const {
   std::string filename =
       problem()->getParameter(PARAM_HEAD "inputSerialization").stringValue();
-  if (filename.size() == 0)
-    return;
+  if (filename.size() == 0) return;
 
-  bool textFormat = (filename.size() > 4
-                     && filename.substr(filename.size() - 4) == ".txt");
+  bool textFormat =
+      (filename.size() > 4 && filename.substr(filename.size() - 4) == ".txt");
 
   // Find a non existent filename
-  const std::string basename (filename);
+  const std::string basename(filename);
   int i = 1;
   while (std::ifstream(filename).is_open()) {
     std::ostringstream oss;
@@ -271,11 +259,11 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
   if (textFormat)
     parser::serializePath<serialization::text_oarchive>(device, path, filename);
   else
-    parser::serializePath<serialization::binary_oarchive>(device, path, filename);
+    parser::serializePath<serialization::binary_oarchive>(device, path,
+                                                          filename);
 }
 
-::toppra::LinearConstraintPtrs TOPPRA::constraints()
-{
+::toppra::LinearConstraintPtrs TOPPRA::constraints() {
   const value_type effortScale = this->effortScale;
   const value_type velScale = this->velocityScale;
   const vector_t accLimits = this->accelerationLimits;
@@ -288,36 +276,38 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
   ::toppra::LinearConstraintPtrs v;
 
   // Joint velocity limits
-  v.push_back(
-      std::make_shared<LinearJointVelocity>(-velScale * model.velocityLimit,
-                                            velScale * model.velocityLimit)
-  );
+  v.push_back(std::make_shared<LinearJointVelocity>(
+      -velScale * model.velocityLimit, velScale * model.velocityLimit));
   // Joint acceleration limits
   if (accLimits.size() > 0) {
     if (accLimits.size() != model.nv) {
       std::ostringstream oss;
-      oss << "Acceleration limits should be of size " << model.nv << " and a "
-        "vector of size " << accLimits.size() << " is provided.";
+      oss << "Acceleration limits should be of size " << model.nv
+          << " and a "
+             "vector of size "
+          << accLimits.size() << " is provided.";
       throw std::invalid_argument(oss.str());
     }
-    v.push_back(std::make_shared<LinearJointAcceleration>(-accLimits, accLimits));
+    v.push_back(
+        std::make_shared<LinearJointAcceleration>(-accLimits, accLimits));
   }
   // Joint torque limits
   if (effortScale >= 0) {
     auto torqueConstraint =
-        std::make_shared<jointTorque::Pinocchio<pinocchio::Model> >(model);  // No friction
-    torqueConstraint->lowerBounds(effortScale * torqueConstraint->lowerBounds());
-    torqueConstraint->upperBounds(effortScale * torqueConstraint->upperBounds());
+        std::make_shared<jointTorque::Pinocchio<pinocchio::Model>>(
+            model);  // No friction
+    torqueConstraint->lowerBounds(effortScale *
+                                  torqueConstraint->lowerBounds());
+    torqueConstraint->upperBounds(effortScale *
+                                  torqueConstraint->upperBounds());
     v.push_back(torqueConstraint);
   }
-  for (auto& c : v)
-    c->discretizationType(::toppra::Interpolation);
+  for (auto& c : v) c->discretizationType(::toppra::Interpolation);
 
   return v;
 }
 
-TOPPRA::InterpolationMethod TOPPRA::interpolationMethod() const
-{
+TOPPRA::InterpolationMethod TOPPRA::interpolationMethod() const {
   const std::string& interpolationMethod = this->interpolationMethod_;
   if (interpolationMethod == "hermite") {
     return Hermite;
@@ -326,13 +316,13 @@ TOPPRA::InterpolationMethod TOPPRA::interpolationMethod() const
   } else {
     std::ostringstream oss;
     oss << "Invalid interpolationMethod. Allowed values are 'hermite' and "
-      "'constant_acceleration'. Provided value: " << interpolationMethod;
+           "'constant_acceleration'. Provided value: "
+        << interpolationMethod;
     throw std::invalid_argument(oss.str());
   }
 }
 
-TOPPRA::GridpointMethod TOPPRA::gridpointMethod() const
-{
+TOPPRA::GridpointMethod TOPPRA::gridpointMethod() const {
   const std::string& gridpointMethod = this->gridpointMethod_;
   if (gridpointMethod == "param_space") {
     return EvenlyParamSpaced;
@@ -340,14 +330,15 @@ TOPPRA::GridpointMethod TOPPRA::gridpointMethod() const
     return EvenlyTimeSpaced;
   } else {
     std::ostringstream oss;
-    oss << "Invalid gridpointMethod (method to generate gridpoints). Allowed values are 'param_space' and "
-      "'time_space'. Provided value: " << gridpointMethod;
+    oss << "Invalid gridpointMethod (method to generate gridpoints). Allowed "
+           "values are 'param_space' and "
+           "'time_space'. Provided value: "
+        << gridpointMethod;
     throw std::invalid_argument(oss.str());
   }
 }
 
-PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
-{
+PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
   inputSerialization(path);
 
   const size_type solver = this->solver;
@@ -377,13 +368,14 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
   id_subpaths.reserve(flatten_path->numberPaths() + 1);
 
   ::toppra::Vector gridpoints;
-  switch(gridpointMethod()) {
+  switch (gridpointMethod()) {
     case EvenlyTimeSpaced:
       gridpoints = std::move(evenlyTimeSpacedGridpoints(
-            pathWrapper, paths, N, maxSegmentLength, id_subpaths));
+          pathWrapper, paths, N, maxSegmentLength, id_subpaths));
       break;
     case EvenlyParamSpaced:
-      gridpoints = std::move(evenlySpacedGridpoints(paths, N, maxSegmentLength, id_subpaths));
+      gridpoints = std::move(
+          evenlySpacedGridpoints(paths, N, maxSegmentLength, id_subpaths));
       break;
   }
   N = gridpoints.size() - 1;
@@ -408,8 +400,8 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
   auto ret_code = algo.computePathParametrization();
   if (ret_code != ::toppra::ReturnCode::OK) {
     std::stringstream ss;
-    ss << "TOPPRA failed, returned code: " << static_cast<int>(ret_code)
-       << '\n' << algo.getErrorMessage();
+    ss << "TOPPRA failed, returned code: " << static_cast<int>(ret_code) << '\n'
+       << algo.getErrorMessage();
     throw std::runtime_error(ss.str());
   }
   const auto out_data = algo.getParameterizationData();
@@ -436,7 +428,7 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
   // - piecewise constant acceleration or
   // - hermite cubic spline interpolation
   TimeParameterizationPtr_t global;
-  switch(interpolationMethod()) {
+  switch (interpolationMethod()) {
     case ConstantAcceleration:
       global = constantAccelerationParametrization(t, s, sd);
       break;
@@ -460,22 +452,21 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path)
 }
 
 HPP_START_PARAMETER_DECLARATION(TOPPRA)
-Problem::declareParameter(ParameterDescription(Parameter::VECTOR,
-                                               PARAM_HEAD "accelerationLimits",
-                                               "Define the acceleration limits.",
-                                               Parameter(vector_t())));
-Problem::declareParameter(ParameterDescription(Parameter::STRING,
-                                               PARAM_HEAD "gridpointMethod",
-                                               "Define the method for generating gridpoints.\n"
-                                               "Accepted values are:\n"
-                                               "  \"param_space\": Evenly spaced in parameter,\n"
-                                               "  \"time_space\": Evenly spaced in time",
-                                               Parameter(std::string("param_space"))));
-Problem::declareParameter(ParameterDescription(Parameter::STRING,
-                                               PARAM_HEAD "interpolationMethod",
-                                               "Define the interpolation method for the output of TOPPRA.\n"
-                                               "Accepted values are: \"hermite\", \"constant_acceleration\"",
-                                               Parameter(std::string("constant_acceleration"))));
+Problem::declareParameter(ParameterDescription(
+    Parameter::VECTOR, PARAM_HEAD "accelerationLimits",
+    "Define the acceleration limits.", Parameter(vector_t())));
+Problem::declareParameter(
+    ParameterDescription(Parameter::STRING, PARAM_HEAD "gridpointMethod",
+                         "Define the method for generating gridpoints.\n"
+                         "Accepted values are:\n"
+                         "  \"param_space\": Evenly spaced in parameter,\n"
+                         "  \"time_space\": Evenly spaced in time",
+                         Parameter(std::string("param_space"))));
+Problem::declareParameter(ParameterDescription(
+    Parameter::STRING, PARAM_HEAD "interpolationMethod",
+    "Define the interpolation method for the output of TOPPRA.\n"
+    "Accepted values are: \"hermite\", \"constant_acceleration\"",
+    Parameter(std::string("constant_acceleration"))));
 Problem::declareParameter(ParameterDescription(Parameter::FLOAT,
                                                PARAM_HEAD "effortScale",
                                                "Effort rescaling value.",
@@ -490,14 +481,14 @@ Problem::declareParameter(ParameterDescription(Parameter::INT,
                                                "1: GLPK\n"
                                                "2: qpOASES",
                                                Parameter((size_type)0)));
-Problem::declareParameter(ParameterDescription(Parameter::INT, PARAM_HEAD "N",
-                                               "Minimal number of sampling point.",
-                                               Parameter((size_type)50)));
-Problem::declareParameter(ParameterDescription(Parameter::STRING,
-                                               PARAM_HEAD "inputSerialization",
-                                               "Filename where to serialize the input path. Leave empty to skip.\n"
-                                               "Text serialization is used if filename ends with '.txt'.",
-                                               Parameter(std::string(""))));
+Problem::declareParameter(ParameterDescription(
+    Parameter::INT, PARAM_HEAD "N", "Minimal number of sampling point.",
+    Parameter((size_type)50)));
+Problem::declareParameter(ParameterDescription(
+    Parameter::STRING, PARAM_HEAD "inputSerialization",
+    "Filename where to serialize the input path. Leave empty to skip.\n"
+    "Text serialization is used if filename ends with '.txt'.",
+    Parameter(std::string(""))));
 HPP_END_PARAMETER_DECLARATION(TOPPRA)
 }  // namespace pathOptimization
 

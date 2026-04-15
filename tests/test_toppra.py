@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 # c_5 = 6
 
 K = np.zeros((6, 6))
-t_order_conditions = [ (0,0) for _ in range(6) ]
+t_order_conditions = [(0, 0) for _ in range(6)]
 boundary_conditions = np.zeros(6)
 
 
@@ -50,7 +50,7 @@ set_boundary_condition(0, 0, 0.0, 0.0)  # P(0) = 0
 set_boundary_condition(1, 0, 1.0, 1.0)  # P(1) = 1
 set_boundary_condition(2, 1, 0.0, 0.0)  # P'(0) = 0
 set_boundary_condition(3, 1, 1.0, 0.0)  # P'(1) = 0
-set_boundary_condition(4, 2, 0., 0.0)  # P''(0) = 0
+set_boundary_condition(4, 2, 0.0, 0.0)  # P''(0) = 0
 # set_boundary_condition(4, 1, 0.5, 0.0)  # P'(0.5) = 0
 set_boundary_condition(5, 2, 1.0, 0.0)  # P''(1) = 0
 
@@ -79,6 +79,7 @@ sdd = (sd2[1:] - sd2[:-1]) / 2 / ds
 # Calculate t
 dt = ds / (sd[1:] + sd[:-1]) * 2
 t = np.insert(np.cumsum(dt), 0, 0.0)
+
 
 # Assuming constant acceleration, calculate spline coefficient
 # s_i(t) = a[i] + b[i] (t - t0[i]) + c[i] (t - t0[i])**2
@@ -123,6 +124,7 @@ class ConstAccel:
         if order == 2:
             return qs * sdd + qss * sd**2
 
+
 ss = np.linspace(0, 1, num=1000)
 q = [path.eval_single(u, order=0) for u in ss]
 v = [path.eval_single(u, order=1) for u in ss]
@@ -149,8 +151,8 @@ plt.legend()
 
 plt.figure()
 plt.title("Time parametrization")
-#plt.plot(ts, [ S.s(u, order=0) for u in ts ], label="s")
-plt.plot(ts, [ S.s(u, order=1) for u in ts ], label="sd")
-#plt.plot(ts, [ S.s(u, order=2) for u in ts ], label="sdd")
+# plt.plot(ts, [ S.s(u, order=0) for u in ts ], label="s")
+plt.plot(ts, [S.s(u, order=1) for u in ts], label="sd")
+# plt.plot(ts, [ S.s(u, order=2) for u in ts ], label="sdd")
 plt.legend()
 plt.show()

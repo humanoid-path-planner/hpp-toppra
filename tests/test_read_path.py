@@ -142,15 +142,22 @@ def run_toppra(
     algo = toppra.cpp.TOPPRA(constraints, path_wrapper)
     gridpointsMethod = 2
     if gridpointsMethod == 0:
-        algo.setGridpoints(toppra.interpolator.propose_gridpoints(path_wrapper,
-            min_nb_points=N))
+        algo.setGridpoints(
+            toppra.interpolator.propose_gridpoints(path_wrapper, min_nb_points=N)
+        )
     elif gridpointsMethod == 1:
         algo.setGridpoints(path_wrapper.proposeGridpoints(minNbPoints=N))
     elif gridpointsMethod == 2:
-        initialGridpoints = [0.]
+        initialGridpoints = [0.0]
         for i in range(path.numberPaths()):
-            initialGridpoints.append(initialGridpoints[-1] + path.pathAtRank(i).length())
-        algo.setGridpoints(path_wrapper.proposeGridpoints(minNbPoints=N, initialGridpoints=initialGridpoints))
+            initialGridpoints.append(
+                initialGridpoints[-1] + path.pathAtRank(i).length()
+            )
+        algo.setGridpoints(
+            path_wrapper.proposeGridpoints(
+                minNbPoints=N, initialGridpoints=initialGridpoints
+            )
+        )
     else:
         algo.setN(N)
     algo.computePathParametrization()

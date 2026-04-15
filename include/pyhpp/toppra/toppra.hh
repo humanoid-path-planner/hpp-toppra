@@ -32,5 +32,5 @@ namespace toppra {
 
 void exposeToppra();
 
-} // namespace toppra
-} // namespace pyhpp
+}  // namespace toppra
+}  // namespace pyhpp
