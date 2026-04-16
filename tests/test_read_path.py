@@ -49,20 +49,20 @@ def plot_path(path):
     ts = np.linspace(path.timeRange[0], path.timeRange[1], num=10000)
     plt.subplot(3, 1, 1)
     lines = plt.plot(ts, [path.eval(t)[0] for t in ts])
-    for i, l in enumerate(lines):
-        l.set_label(f"q{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"q{i}")
     draw_vertical_lines(times)
     plt.legend()
     plt.subplot(3, 1, 2)
     lines = plt.plot(ts, [path.derivative(t, 1) for t in ts])
-    for i, l in enumerate(lines):
-        l.set_label(f"v{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"v{i}")
     draw_vertical_lines(times)
     plt.legend()
     plt.subplot(3, 1, 3)
     lines = plt.plot(ts, [path.derivative(t, 2) for t in ts], "+")
-    for i, l in enumerate(lines):
-        l.set_label(f"a{i}")
+    for i, line in enumerate(lines):
+        line.set_label(f"a{i}")
     draw_vertical_lines(times)
     plt.legend()
 
@@ -142,15 +142,22 @@ def run_toppra(
     algo = toppra.cpp.TOPPRA(constraints, path_wrapper)
     gridpointsMethod = 2
     if gridpointsMethod == 0:
-        algo.setGridpoints(toppra.interpolator.propose_gridpoints(path_wrapper,
-            min_nb_points=N))
+        algo.setGridpoints(
+            toppra.interpolator.propose_gridpoints(path_wrapper, min_nb_points=N)
+        )
     elif gridpointsMethod == 1:
         algo.setGridpoints(path_wrapper.proposeGridpoints(minNbPoints=N))
     elif gridpointsMethod == 2:
-        initialGridpoints = [0.]
+        initialGridpoints = [0.0]
         for i in range(path.numberPaths()):
-            initialGridpoints.append(initialGridpoints[-1] + path.pathAtRank(i).length())
-        algo.setGridpoints(path_wrapper.proposeGridpoints(minNbPoints=N, initialGridpoints=initialGridpoints))
+            initialGridpoints.append(
+                initialGridpoints[-1] + path.pathAtRank(i).length()
+            )
+        algo.setGridpoints(
+            path_wrapper.proposeGridpoints(
+                minNbPoints=N, initialGridpoints=initialGridpoints
+            )
+        )
     else:
         algo.setN(N)
     algo.computePathParametrization()
