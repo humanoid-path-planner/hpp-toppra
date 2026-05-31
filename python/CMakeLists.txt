@@ -37,7 +37,7 @@ set_target_properties(
         LIBRARY_OUTPUT_NAME ${LIBNAME}
 )
 target_link_boost_python(${MODULE} PUBLIC)
-target_link_libraries(${MODULE} PUBLIC eigenpy::eigenpy PRIVATE hpp-toppra)
+target_link_libraries(${MODULE} PUBLIC eigenpy::eigenpy PRIVATE hpp-toppra hpp-python::hpp-python)
 
 install(TARGETS ${MODULE} DESTINATION ${PYTHON_SITELIB}/${MODULE})
 

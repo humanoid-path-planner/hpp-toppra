@@ -9,13 +9,11 @@
  <url type='website'>https://github.com/jmirabel/hpp-toppra</url>
 
 
- <author>Joseph Mirabel</author>
+ <author>Joseph Mirabel, Florent Lamiraux, Paul Sardin</author>
 
- <buildtool_depend>catkin</buildtool_depend>
-
- <build_depend>hpp-core</build_depend>
- <exec_depend>hpp-core</exec_depend>
- <build_export_depend>hpp-core</build_export_depend>
+ <build_depend>hpp-python</build_depend>
+ <exec_depend>hpp-python</exec_depend>
+ <build_export_depend>hpp-python</build_export_depend>
 
  <build_depend>toppra</build_depend>
  <exec_depend>toppra</exec_depend>
