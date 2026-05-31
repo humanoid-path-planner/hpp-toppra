@@ -58,7 +58,10 @@ add_library(
     src/serialization.hh
     ${${PROJECT_NAME}_HEADERS}
 )
-target_link_libraries(hpp-toppra PUBLIC hpp-python::hpp-python hpp-core::hpp-core toppra::toppra)
+target_link_libraries(
+    hpp-toppra
+    PUBLIC hpp-python::hpp-python hpp-core::hpp-core toppra::toppra
+)
 target_include_directories(hpp-toppra PUBLIC $<INSTALL_INTERFACE:include>)
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
