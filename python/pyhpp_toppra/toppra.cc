@@ -47,7 +47,8 @@ void exposeToppra() {
       .def_readwrite("solver", &TOPPRA_t::solver)
       .def_readwrite("N", &TOPPRA_t::N)
       .def_readwrite("interpolationMethod", &TOPPRA_t::interpolationMethod_)
-      .def_readwrite("gridpointMethod", &TOPPRA_t::gridpointMethod_);
+      .def_readwrite("gridpointMethod", &TOPPRA_t::gridpointMethod_)
+      .def("selectJoints", &TOPPRA_t::selectJoints);
 }
 
 }  // namespace toppra

@@ -1,3 +1,4 @@
+#include <hpp/constraints/matrix-view.hh>
 #include <hpp/core/path-optimizer.hh>
 #include <hpp/core/path-vector.hh>
 #include <hpp/core/path.hh>
@@ -25,23 +26,30 @@ namespace hpp {
 namespace toppra {
 
 using namespace hpp::core;
+typedef constraints::segments_t segments_t;
+typedef constraints::segment_t segment_t;
+typedef Eigen::RowBlockIndices RowBlockIndices;
+typedef Eigen::BlockIndex BlockIndex;
 
 class PathWrapper : public ::toppra::GeometricPath {
  public:
-  PathWrapper(PathPtr_t path)
-      : ::toppra::GeometricPath((int)path->outputSize(),
-                                (int)path->outputDerivativeSize()),
-        path_(path) {}
+  PathWrapper(PathPtr_t path,
+      const segments_t& configVariables, const segments_t& velocityVariables
+      ) : ::toppra::GeometricPath((int)Eigen::BlockIndex::cardinal(configVariables),
+				  (int)Eigen::BlockIndex::cardinal(velocityVariables)),
+    path_(path), configVariables_(configVariables), velocityVariables_(velocityVariables) {
+  }
 
   ::toppra::Vector eval_single(::toppra::value_type time, int order) const {
     bool success;
     ::toppra::Vector res;
     if (order == 0) {
-      res = path_->eval(time, success);
+      res = RowBlockIndices(configVariables_).rview(path_->eval(time, success));
       assert(success);
     } else {
-      res.resize(dof());
-      path_->derivative(res, time, order);
+      ::toppra::Vector tmp(path_->outputDerivativeSize());
+      path_->derivative(tmp, time, order);
+      res = RowBlockIndices(velocityVariables_).rview(tmp);
     }
     return res;
   }
@@ -53,6 +61,8 @@ class PathWrapper : public ::toppra::GeometricPath {
 
  private:
   PathPtr_t path_;
+  segments_t configVariables_;
+  segments_t velocityVariables_;
 };
 
 namespace timeParameterization {
@@ -92,6 +102,34 @@ TOPPRAPtr_t TOPPRA::create(const core::ProblemConstPtr_t& p) {
   return TOPPRAPtr_t(new TOPPRA(p));
 }
 
+void TOPPRA::selectJoints(const std::vector <std::string>& jointNames) {
+  const auto& model(problem()->robot()->model());
+  pinocchio::ArrayXb configurationMask(model.nq);
+  configurationMask.fill(false);
+  pinocchio::ArrayXb velocityMask(model.nv);
+  velocityMask.fill(false);
+  for(const auto& name : jointNames) {
+    auto jointId = model.getJointId(name);
+    if (jointId >= (pinocchio::JointIndex) model.njoints) {
+      std::ostringstream os;
+      os << "Joint " << name << " does not belong to the robot.";
+      throw std::logic_error(os.str().c_str());
+    }
+    size_type iq = (size_type) model.joints[jointId].idx_q();
+    size_type nq = (size_type) model.joints[jointId].nq();
+    size_type iv = (size_type) model.joints[jointId].idx_v();
+    size_type nv = (size_type) model.joints[jointId].nv();
+    for (size_type i=iq; i<iq+nq; ++i) {
+      configurationMask[i] = true;
+    }
+    for (size_type i=iv; i<iv+nv; ++i) {
+      velocityMask[i] = true;
+    }
+  }
+  configVariables_ = BlockIndex::fromLogicalExpression(configurationMask);
+  velocityVariables_ = BlockIndex::fromLogicalExpression(velocityMask);
+}
+
 TOPPRA::TOPPRA(const core::ProblemConstPtr_t& p)
     : core::PathOptimizer(p),
       effortScale(p->getParameter(PARAM_HEAD "effortScale").floatValue()),
@@ -103,7 +141,10 @@ TOPPRA::TOPPRA(const core::ProblemConstPtr_t& p)
       interpolationMethod_(
           p->getParameter(PARAM_HEAD "interpolationMethod").stringValue()),
       gridpointMethod_(
-          p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()) {}
+          p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()) {
+  configVariables_ = segments_t(1, segment_t(0, p->robot()->configSize()));
+  velocityVariables_ = segments_t(1, segment_t(0, p->robot()->numberDof()));
+}
 
 TimeParameterizationPtr_t constantAccelerationParametrization(
     ::toppra::Vector const& t, ::toppra::Vector const& s,
@@ -277,12 +318,14 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
 
   // Joint velocity limits
   v.push_back(std::make_shared<LinearJointVelocity>(
-      -velScale * model.velocityLimit, velScale * model.velocityLimit));
+      -velScale * RowBlockIndices(configVariables_).rview(model.velocityLimit),
+       velScale * RowBlockIndices(configVariables_).rview(model.velocityLimit)));
   // Joint acceleration limits
   if (accLimits.size() > 0) {
-    if (accLimits.size() != model.nv) {
+    size_type expectedSize = Eigen::BlockIndex::cardinal(velocityVariables_);
+    if (accLimits.size() != expectedSize) {
       std::ostringstream oss;
-      oss << "Acceleration limits should be of size " << model.nv
+      oss << "Acceleration limits should be of size " << expectedSize
           << " and a "
              "vector of size "
           << accLimits.size() << " is provided.";
@@ -343,7 +386,7 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
 
   const size_type solver = this->solver;
 
-  ::toppra::LinearConstraintPtrs v = std::move(constraints());
+  ::toppra::LinearConstraintPtrs v = constraints();
 
   PathVectorPtr_t flatten_path =
       PathVector::create(path->outputSize(), path->outputDerivativeSize());
@@ -361,7 +404,8 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
     paths[i] = flatten_path->pathAtRank(i);
   value_type maxSegmentLength = flatten_path->length() / (value_type)N;
 
-  std::shared_ptr<PathWrapper> pathWrapper(new PathWrapper(flatten_path));
+  std::shared_ptr<PathWrapper> pathWrapper(new PathWrapper(flatten_path, configVariables_,
+                                                           velocityVariables_));
 
   // 1. Compute TOPPRA grid points (in the parameter space).
   std::vector<size_type> id_subpaths;
