@@ -42,6 +42,7 @@ target_link_libraries(
     PUBLIC eigenpy::eigenpy
     PRIVATE hpp-toppra hpp-python::hpp-python
 )
+target_include_directories(${MODULE} PRIVATE ${HPP_PYTHON_INCLUDE_DIRS})
 
 install(TARGETS ${MODULE} DESTINATION ${PYTHON_SITELIB}/${MODULE})
 
