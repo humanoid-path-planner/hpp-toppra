@@ -33,12 +33,14 @@ typedef Eigen::BlockIndex BlockIndex;
 
 class PathWrapper : public ::toppra::GeometricPath {
  public:
-  PathWrapper(PathPtr_t path,
-      const segments_t& configVariables, const segments_t& velocityVariables
-      ) : ::toppra::GeometricPath((int)Eigen::BlockIndex::cardinal(configVariables),
-				  (int)Eigen::BlockIndex::cardinal(velocityVariables)),
-    path_(path), configVariables_(configVariables), velocityVariables_(velocityVariables) {
-  }
+  PathWrapper(PathPtr_t path, const segments_t& configVariables,
+              const segments_t& velocityVariables)
+      : ::toppra::GeometricPath(
+            (int)Eigen::BlockIndex::cardinal(configVariables),
+            (int)Eigen::BlockIndex::cardinal(velocityVariables)),
+        path_(path),
+        configVariables_(configVariables),
+        velocityVariables_(velocityVariables) {}
 
   ::toppra::Vector eval_single(::toppra::value_type time, int order) const {
     bool success;
@@ -102,27 +104,27 @@ TOPPRAPtr_t TOPPRA::create(const core::ProblemConstPtr_t& p) {
   return TOPPRAPtr_t(new TOPPRA(p));
 }
 
-void TOPPRA::selectJoints(const std::vector <std::string>& jointNames) {
+void TOPPRA::selectJoints(const std::vector<std::string>& jointNames) {
   const auto& model(problem()->robot()->model());
   pinocchio::ArrayXb configurationMask(model.nq);
   configurationMask.fill(false);
   pinocchio::ArrayXb velocityMask(model.nv);
   velocityMask.fill(false);
-  for(const auto& name : jointNames) {
+  for (const auto& name : jointNames) {
     auto jointId = model.getJointId(name);
-    if (jointId >= (pinocchio::JointIndex) model.njoints) {
+    if (jointId >= (pinocchio::JointIndex)model.njoints) {
       std::ostringstream os;
       os << "Joint " << name << " does not belong to the robot.";
       throw std::logic_error(os.str().c_str());
     }
-    size_type iq = (size_type) model.joints[jointId].idx_q();
-    size_type nq = (size_type) model.joints[jointId].nq();
-    size_type iv = (size_type) model.joints[jointId].idx_v();
-    size_type nv = (size_type) model.joints[jointId].nv();
-    for (size_type i=iq; i<iq+nq; ++i) {
+    size_type iq = (size_type)model.joints[jointId].idx_q();
+    size_type nq = (size_type)model.joints[jointId].nq();
+    size_type iv = (size_type)model.joints[jointId].idx_v();
+    size_type nv = (size_type)model.joints[jointId].nv();
+    for (size_type i = iq; i < iq + nq; ++i) {
       configurationMask[i] = true;
     }
-    for (size_type i=iv; i<iv+nv; ++i) {
+    for (size_type i = iv; i < iv + nv; ++i) {
       velocityMask[i] = true;
     }
   }
@@ -319,7 +321,7 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
   // Joint velocity limits
   v.push_back(std::make_shared<LinearJointVelocity>(
       -velScale * RowBlockIndices(configVariables_).rview(model.velocityLimit),
-       velScale * RowBlockIndices(configVariables_).rview(model.velocityLimit)));
+      velScale * RowBlockIndices(configVariables_).rview(model.velocityLimit)));
   // Joint acceleration limits
   if (accLimits.size() > 0) {
     size_type expectedSize = Eigen::BlockIndex::cardinal(velocityVariables_);
@@ -404,8 +406,8 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
     paths[i] = flatten_path->pathAtRank(i);
   value_type maxSegmentLength = flatten_path->length() / (value_type)N;
 
-  std::shared_ptr<PathWrapper> pathWrapper(new PathWrapper(flatten_path, configVariables_,
-                                                           velocityVariables_));
+  std::shared_ptr<PathWrapper> pathWrapper(
+      new PathWrapper(flatten_path, configVariables_, velocityVariables_));
 
   // 1. Compute TOPPRA grid points (in the parameter space).
   std::vector<size_type> id_subpaths;

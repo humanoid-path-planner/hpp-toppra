@@ -27,8 +27,9 @@ class TOPPRA : public core::PathOptimizer {
   core::PathVectorPtr_t optimize(const core::PathVectorPtr_t& path);
 
   /// Select the joints taken into account in the time parameterization
-  /// Acceleration and velocity limits of other joints are not taken into account
-  void selectJoints(const std::vector <std::string>& jointNames);
+  /// Acceleration and velocity limits of other joints are not taken into
+  /// account
+  void selectJoints(const std::vector<std::string>& jointNames);
 
   // TODO remove when
   // https://github.com/humanoid-path-planner/hpp-core/pull/305
