@@ -320,8 +320,10 @@ void TOPPRA::inputSerialization(PathPtr_t path) const {
 
   // Joint velocity limits
   v.push_back(std::make_shared<LinearJointVelocity>(
-      -velScale * RowBlockIndices(velocityVariables_).rview(model.velocityLimit),
-      velScale * RowBlockIndices(velocityVariables_).rview(model.velocityLimit)));
+      -velScale *
+          RowBlockIndices(velocityVariables_).rview(model.velocityLimit),
+      velScale *
+          RowBlockIndices(velocityVariables_).rview(model.velocityLimit)));
   // Joint acceleration limits
   if (accLimits.size() > 0) {
     size_type expectedSize = Eigen::BlockIndex::cardinal(velocityVariables_);
