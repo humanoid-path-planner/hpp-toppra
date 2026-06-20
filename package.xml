@@ -13,6 +13,8 @@
   <depend>hpp_python</depend>
   <depend>toppra</depend>
 
+  <test_depend>catch2</test_depend>
+
   <buildtool_depend>cmake</buildtool_depend>
   <build_depend>jrl_cmakemodules</build_depend>
 
