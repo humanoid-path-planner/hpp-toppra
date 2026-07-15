@@ -1,0 +1,12 @@
+[hpp-python]
+url = "github:humanoid-path-planner"
+
+[hpp-toppra]
+url = "."
+src_deps = ["hpp-python", "toppra"]
+
+[toppra]
+apt_deps = ["python3-pybind11"]
+configure_args = ["-S", "cpp"]
+url = "github:hungpham2511"
+version = "0.6.8"
