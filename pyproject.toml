@@ -1,0 +1,22 @@
+[build-system]
+build-backend = "cmeel"
+requires = [
+  "cmeel-boost[build] ~= 1.90.0",
+  "cmeel-toppra[build]",
+  "cmeel[build]",
+  "hpp-python[build]"
+]
+
+[project]
+dependencies = [
+  "cmeel-boost ~= 1.90.0",
+  "cmeel-toppra",
+  "hpp-python"
+]
+description = "Bridge between HPP and TOPPRA"
+license = "LGPL-3.0-or-later"
+name = "hpp-toppra"
+version = "9.0.0"
+
+[tool.tomlsort]
+all = true

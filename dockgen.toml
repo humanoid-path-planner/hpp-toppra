@@ -2,8 +2,8 @@
 url = "github:humanoid-path-planner"
 
 [hpp-toppra]
-url = "."
 src_deps = ["hpp-python", "toppra"]
+url = "."
 
 [toppra]
 apt_deps = ["python3-pybind11"]
