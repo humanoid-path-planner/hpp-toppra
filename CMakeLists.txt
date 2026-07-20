@@ -42,7 +42,16 @@ add_project_dependency(hpp-core REQUIRED)
 add_project_dependency(hpp-python REQUIRED)
 add_project_dependency(toppra 0.6.2 REQUIRED)
 if(BUILD_TESTING)
-    find_package(Catch2 REQUIRED)
+    find_package(Catch2 QUIET)
+    if(NOT Catch2_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.15.2
+        )
+        FetchContent_MakeAvailable(Catch2)
+    endif()
 endif()
 
 include(${HPP_CORE_CMAKE_PLUGIN})
