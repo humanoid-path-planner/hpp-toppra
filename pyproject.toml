@@ -16,7 +16,7 @@ dependencies = [
 description = "Bridge between HPP and TOPPRA"
 license = "LGPL-3.0-or-later"
 name = "hpp-toppra"
-version = "9.0.0"
+version = "9.0.2"
 
 [tool.tomlsort]
 all = true
