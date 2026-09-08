@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cmath>
 #include <hpp/core/time-parameterization/piecewise-polynomial.hh>
 #include <iomanip>
 
@@ -55,6 +57,25 @@ class HPP_CORE_DLLAPI ShiftedPiecewisePolynomial : public TimeParameterization {
   /// Computes \f$ \sum_{i=1}^n i a_i t^{i-1} \f$
   value_type derivative(const value_type& t, const size_type& order) const {
     return Jac(t, order);
+  }
+
+  /// Bound the linear velocity on each quadratic time interval.
+  value_type derivativeBound(const value_type& low,
+                             const value_type& up) const override {
+    static_assert(Order == 2, "Expected quadratic time parameterization");
+    const value_type a = std::max(low, breakpoints_[0]);
+    const value_type b = std::min(up, breakpoints_[breakpoints_.size() - 1]);
+    if (a > b) throw std::invalid_argument("Invalid derivative bound interval");
+    value_type bound = 0;
+    for (size_type j = 0; j < parameters_.cols(); ++j) {
+      const value_type l = std::max(a, breakpoints_[j]) - breakpoints_[j];
+      const value_type u = std::min(b, breakpoints_[j + 1]) - breakpoints_[j];
+      if (l > u) continue;
+      bound = std::max(
+          {bound, std::abs(parameters_(1, j) + 2 * parameters_(2, j) * l),
+           std::abs(parameters_(1, j) + 2 * parameters_(2, j) * u)});
+    }
+    return bound;
   }
 
  private:

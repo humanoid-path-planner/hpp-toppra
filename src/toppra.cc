@@ -67,34 +67,63 @@ class PathWrapper : public ::toppra::GeometricPath {
   segments_t velocityVariables_;
 };
 
-namespace timeParameterization {
-class Extract : public TimeParameterization {
+// Discretize each subpath separately so that an interval uses its own
+// derivatives at both ends, including at C1 (but not C2) junctions.
+class PiecewiseConstraint : public ::toppra::LinearConstraint {
  public:
-  Extract(TimeParameterizationPtr_t inner, value_type dt, value_type ds)
-      : inner_(inner), dt_(dt), ds_(ds) {}
-
-  value_type value(const value_type& t) const {
-    return inner_->value(t + dt_) + ds_;
-  }
-
-  value_type derivative(const value_type& t, const size_type& order) const {
-    return inner_->derivative(t + dt_, order);
-  }
-
-  value_type derivativeBound(const value_type& low,
-                             const value_type& up) const {
-    return derivativeBound(low + dt_, up + dt_);
-  }
-
-  TimeParameterizationPtr_t copy() const {
-    return TimeParameterizationPtr_t(new Extract(inner_, dt_, ds_));
+  PiecewiseConstraint(const ::toppra::LinearConstraintPtr& inner,
+                      const std::vector<PathPtr_t>& paths,
+                      const std::vector<size_type>& indices,
+                      const segments_t& configVariables,
+                      const segments_t& velocityVariables)
+      : ::toppra::LinearConstraint(2 * inner->nbConstraints(),
+                                   2 * inner->nbVariables(), inner->constantF(),
+                                   false, false),
+        inner_(inner),
+        paths_(paths),
+        indices_(indices),
+        configVariables_(configVariables),
+        velocityVariables_(velocityVariables) {
+    discretizationType(::toppra::Collocation);
   }
 
  private:
-  TimeParameterizationPtr_t inner_;
-  value_type dt_, ds_;
+  void computeParams_impl(const ::toppra::GeometricPath&,
+                          const ::toppra::Vector& gridpoints,
+                          ::toppra::Vectors& a, ::toppra::Vectors& b,
+                          ::toppra::Vectors& c, ::toppra::Matrices& F,
+                          ::toppra::Vectors& g, ::toppra::Bounds&,
+                          ::toppra::Bounds&) override {
+    for (std::size_t i = 0; i < paths_.size(); ++i) {
+      const size_type first = indices_[i], last = indices_[i + 1];
+      if (first == last) continue;
+      auto range = paths_[i]->timeRange();
+      ::toppra::Vector local = gridpoints.segment(first, last - first + 1);
+      local.array() += range.first - gridpoints[first];
+      local[0] = range.first;
+      local[last - first] = range.second;
+      PathWrapper path(paths_[i], configVariables_, velocityVariables_);
+      ::toppra::Vectors ai, bi, ci, gi;
+      ::toppra::Matrices Fi;
+      ::toppra::Bounds ui, xi;
+      inner_->computeParams(path, local, ai, bi, ci, Fi, gi, ui, xi);
+      const size_type count = last - first + (last == gridpoints.size() - 1);
+      std::copy_n(ai.begin(), count, a.begin() + first);
+      std::copy_n(bi.begin(), count, b.begin() + first);
+      std::copy_n(ci.begin(), count, c.begin() + first);
+      const size_type offset = constantF() ? 0 : first;
+      const size_type size = constantF() ? 1 : count;
+      std::copy_n(Fi.begin(), size, F.begin() + offset);
+      std::copy_n(gi.begin(), size, g.begin() + offset);
+    }
+  }
+
+  ::toppra::LinearConstraintPtr inner_;
+  const std::vector<PathPtr_t>& paths_;
+  const std::vector<size_type>& indices_;
+  const segments_t& configVariables_;
+  const segments_t& velocityVariables_;
 };
-}  // namespace timeParameterization
 
 #define PARAM_HEAD "PathOptimization/TOPPRA/"
 
@@ -231,7 +260,10 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
   for (PathPtr_t const& subpath : paths) {
     auto I = subpath->paramRange();
     value_type pathS = I.second - I.first;
-    size_type n = size_type(std::ceil(pathS / maxSegmentLength));
+    size_type n = pathS > 0
+                      ? std::max<size_type>(
+                            10, size_type(std::ceil(pathS / maxSegmentLength)))
+                      : 0;
     value_type p0 = S.back();
     for (size_type k = 1; k <= n; ++k)
       S.push_back(p0 + (pathS * (value_type)k) / (value_type)n);
@@ -246,14 +278,11 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
     std::shared_ptr<PathWrapper> pathWrapper,
     std::vector<PathPtr_t> const& paths, size_type const N,
     value_type const maxSegmentLength, std::vector<size_type>& id_subpaths) {
-  ::toppra::Vector initialS(paths.size() + 1);
-
-  // id_subpaths.reserve(paths.size() + 1);
-
-  initialS[0] = 0.0;
-  // id_subpaths.push_back(0);
-  for (auto i = 0ul; i < paths.size(); ++i)
-    initialS[i + 1] = initialS[i] + paths[i]->length();
+  ::toppra::Vector initialS =
+      evenlySpacedGridpoints(paths, N, maxSegmentLength, id_subpaths);
+  ::toppra::Vector subpathS(paths.size() + 1);
+  for (auto i = 0ul; i < id_subpaths.size(); ++i)
+    subpathS[i] = initialS[id_subpaths[i]];
 
   const double maxErrorThreshold = 1e-4;
   const int maxIterations = 100;
@@ -261,12 +290,12 @@ TimeParameterizationPtr_t hermiteCubicSplineParametrization(
       maxErrorThreshold, maxIterations, maxSegmentLength, static_cast<int>(N),
       initialS));
   // id_subpaths[i] is the index in gridpoints that corresponds to the start of
-  // paths[i], aka initialS[i]
+  // paths[i], aka subpathS[i]
   int k = 0;
-  for (int i = 0; i < initialS.size(); ++i) {
+  for (int i = 0; i < subpathS.size(); ++i) {
     bool found = false;
     for (; k < gridpoints.size(); ++k) {
-      if (gridpoints[k] == initialS[i]) {
+      if (gridpoints[k] == subpathS[i]) {
         found = true;
         break;
       }
@@ -428,6 +457,11 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
   }
   N = gridpoints.size() - 1;
 
+  for (auto& constraint : v)
+    if (constraint->hasLinearInequalities())
+      constraint = std::make_shared<PiecewiseConstraint>(
+          constraint, paths, id_subpaths, configVariables_, velocityVariables_);
+
   // 2. Apply TOPPRA on the full path
   ::toppra::algorithm::TOPPRA algo(v, pathWrapper);
   algo.setN((int)N);
@@ -475,27 +509,26 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
   // 3.2 time parameterization based on
   // - piecewise constant acceleration or
   // - hermite cubic spline interpolation
-  TimeParameterizationPtr_t global;
-  switch (interpolationMethod()) {
-    case ConstantAcceleration:
-      global = constantAccelerationParametrization(t, s, sd);
-      break;
-    case Hermite:
-      global = hermiteCubicSplineParametrization(t, s, sd);
-      break;
-  }
-
+  const auto parameterize = interpolationMethod() == ConstantAcceleration
+                                ? constantAccelerationParametrization
+                                : hermiteCubicSplineParametrization;
   for (auto i = 0ul; i < paths.size(); ++i) {
-    value_type t0 = t[id_subpaths[i]];
-    value_type p0 = -gridpoints[id_subpaths[i]];
+    const size_type first = id_subpaths[i];
+    const size_type count = id_subpaths[i + 1] - first + 1;
+    if (count == 1) {
+      res->appendPath(paths[i]);
+      continue;
+    }
+    vector_t localT = t.segment(first, count).array() - t[first];
+    vector_t localS = s.segment(first, count).array() - s[first] +
+                      paths[i]->paramRange().first;
     paths[i]->timeParameterization(
-        TimeParameterizationPtr_t(
-            new timeParameterization::Extract(global, t0, p0)),
-        interval_t(0, t[id_subpaths[i + 1]] - t0));
+        parameterize(localT, localS, sd.segment(first, count)),
+        interval_t(0, localT[count - 1]));
     res->appendPath(paths[i]);
   }
 
-  lastTimeParameterization_ = global;
+  lastTimeParameterization_ = parameterize(t, s, sd);
   return res;
 }
 
