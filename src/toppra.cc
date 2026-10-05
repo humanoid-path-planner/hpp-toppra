@@ -1,4 +1,5 @@
 #include <hpp/constraints/matrix-view.hh>
+#include <hpp/core/interpolated-path.hh>
 #include <hpp/core/path-optimizer.hh>
 #include <hpp/core/path-vector.hh>
 #include <hpp/core/path.hh>
@@ -172,7 +173,8 @@ TOPPRA::TOPPRA(const core::ProblemConstPtr_t& p)
       interpolationMethod_(
           p->getParameter(PARAM_HEAD "interpolationMethod").stringValue()),
       gridpointMethod_(
-          p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()) {
+          p->getParameter(PARAM_HEAD "gridpointMethod").stringValue()),
+      stopMethod_(p->getParameter(PARAM_HEAD "stopMethod").stringValue()) {
   configVariables_ = segments_t(1, segment_t(0, p->robot()->configSize()));
   velocityVariables_ = segments_t(1, segment_t(0, p->robot()->numberDof()));
 }
@@ -414,9 +416,70 @@ TOPPRA::GridpointMethod TOPPRA::gridpointMethod() const {
   }
 }
 
+TOPPRA::StopMethod TOPPRA::stopMethod() const {
+  const std::string& stopMethod = this->stopMethod_;
+  if (stopMethod == "none") {
+    return NoStop;
+  } else if (stopMethod == "subpaths") {
+    return SubpathStops;
+  } else if (stopMethod == "junctions") {
+    return JunctionStops;
+  } else {
+    std::ostringstream oss;
+    oss << "Invalid stopMethod. Allowed values are 'none', 'subpaths' and "
+           "'junctions'. Provided value: "
+        << stopMethod;
+    throw std::invalid_argument(oss.str());
+  }
+}
+
 PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
   inputSerialization(path);
+  const StopMethod method = stopMethod();
+  if (method == NoStop) return timeParameterize(path);
 
+  std::vector<PathPtr_t> portions;
+  if (method == SubpathStops) {
+    for (std::size_t i = 0; i < path->numberPaths(); ++i)
+      portions.push_back(path->pathAtRank(i));
+  } else {
+    PathVectorPtr_t flat =
+        PathVector::create(path->outputSize(), path->outputDerivativeSize());
+    path->flatten(flat);
+    for (std::size_t i = 0; i < flat->numberPaths(); ++i) {
+      PathPtr_t leaf = flat->pathAtRank(i);
+      std::vector<value_type> params{leaf->timeRange().first,
+                                     leaf->timeRange().second};
+      InterpolatedPathPtr_t interpolated =
+          HPP_DYNAMIC_PTR_CAST(InterpolatedPath, leaf);
+      if (interpolated) {
+        params.clear();
+        for (const auto& point : interpolated->interpolationPoints())
+          params.push_back(point.first);
+      }
+      for (std::size_t j = 1; j < params.size(); ++j)
+        if (params[j] - params[j - 1] > 1e-9)
+          portions.push_back(leaf->extract(params[j - 1], params[j]));
+    }
+  }
+
+  // Time each portion from rest to rest.
+  PathVectorPtr_t res =
+      PathVector::create(path->outputSize(), path->outputDerivativeSize());
+  for (const PathPtr_t& portion : portions) {
+    if (portion->length() <= 1e-9) continue;
+    if (portion->length() < 1e-6)
+      throw std::invalid_argument(
+          "Path portion is too short for TOPPRA timing");
+    PathVectorPtr_t pv =
+        PathVector::create(path->outputSize(), path->outputDerivativeSize());
+    pv->appendPath(portion);
+    res->concatenate(timeParameterize(pv));
+  }
+  return res;
+}
+
+PathVectorPtr_t TOPPRA::timeParameterize(const PathVectorPtr_t& path) {
   const size_type solver = this->solver;
 
   ::toppra::LinearConstraintPtrs v = constraints();
@@ -548,6 +611,14 @@ Problem::declareParameter(ParameterDescription(
     "Define the interpolation method for the output of TOPPRA.\n"
     "Accepted values are: \"hermite\", \"constant_acceleration\"",
     Parameter(std::string("constant_acceleration"))));
+Problem::declareParameter(ParameterDescription(
+    Parameter::STRING, PARAM_HEAD "stopMethod",
+    "Define where the time parameterization stops.\n"
+    "Accepted values are:\n"
+    "  \"none\": time the whole path,\n"
+    "  \"subpaths\": stop between the subpaths of the input path,\n"
+    "  \"junctions\": stop at path junctions and interpolation points",
+    Parameter(std::string("none"))));
 Problem::declareParameter(ParameterDescription(Parameter::FLOAT,
                                                PARAM_HEAD "effortScale",
                                                "Effort rescaling value.",

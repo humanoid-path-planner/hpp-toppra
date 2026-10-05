@@ -48,6 +48,7 @@ void exposeToppra() {
       .def_readwrite("N", &TOPPRA_t::N)
       .def_readwrite("interpolationMethod", &TOPPRA_t::interpolationMethod_)
       .def_readwrite("gridpointMethod", &TOPPRA_t::gridpointMethod_)
+      .def_readwrite("stopMethod", &TOPPRA_t::stopMethod_)
       .def("selectJoints", &TOPPRA_t::selectJoints);
 }
 
