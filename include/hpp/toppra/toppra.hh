@@ -21,6 +21,11 @@ class TOPPRA : public core::PathOptimizer {
     EvenlyTimeSpaced,
     EvenlyParamSpaced,
   };
+  enum StopMethod {
+    NoStop,
+    SubpathStops,
+    JunctionStops,
+  };
 
   static TOPPRAPtr_t create(const core::ProblemConstPtr_t& p);
 
@@ -50,6 +55,8 @@ class TOPPRA : public core::PathOptimizer {
   std::string interpolationMethod_;
   /// Gridpoint method: "param_space" or "time_space".
   std::string gridpointMethod_;
+  /// Stop method: "none", "subpaths" or "junctions".
+  std::string stopMethod_;
   // Configuration variables that are taken into account for the computation
   constraints::segments_t configVariables_;
   // Velocity variables that are taken into account for the computation
@@ -63,6 +70,8 @@ class TOPPRA : public core::PathOptimizer {
   ::toppra::LinearConstraintPtrs constraints();
   InterpolationMethod interpolationMethod() const;
   GridpointMethod gridpointMethod() const;
+  StopMethod stopMethod() const;
+  core::PathVectorPtr_t timeParameterize(const core::PathVectorPtr_t& path);
 };  // class TOPPRA
 
 }  // namespace pathOptimization
