@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [toppra] Add stop methods between path portions
 - [toppra] Bound timed splines across short path junctions
 - [python] Return Toppra.accelerationLimits by value
+- [CI] Run unit tests in ROS CI; add Python binding tests
 
 ## [9.0.2] - 2026-07-24
 

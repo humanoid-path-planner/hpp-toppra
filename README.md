@@ -32,8 +32,7 @@ timed_path = optimizer.optimize(path)
 
 ### Unit tests
 
-At the moment, there is no CI pipeline so developpers should make sure the unit test passes
-before submitting a PR.
+C++ and Python unit tests run with `ctest` in the ROS and Nix CI pipelines.
 
 ### Increase the version number
 

@@ -91,4 +91,5 @@ if(BUILD_TESTING)
         hpp-toppra
         Catch2::Catch2WithMain
     )
+    add_python_unit_test(test-pyhpp-toppra tests/test_pyhpp_toppra.py python)
 endif()
