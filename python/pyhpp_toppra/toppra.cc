@@ -43,7 +43,10 @@ void exposeToppra() {
       .def("__init__", make_constructor(&TOPPRA_t::create))
       .def_readwrite("effortScale", &TOPPRA_t::effortScale)
       .def_readwrite("velocityScale", &TOPPRA_t::velocityScale)
-      .def_readwrite("accelerationLimits", &TOPPRA_t::accelerationLimits)
+      .add_property("accelerationLimits",
+                    make_getter(&TOPPRA_t::accelerationLimits,
+                                return_value_policy<return_by_value>()),
+                    make_setter(&TOPPRA_t::accelerationLimits))
       .def_readwrite("solver", &TOPPRA_t::solver)
       .def_readwrite("N", &TOPPRA_t::N)
       .def_readwrite("interpolationMethod", &TOPPRA_t::interpolationMethod_)
