@@ -448,6 +448,10 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
     path->flatten(flat);
     for (std::size_t i = 0; i < flat->numberPaths(); ++i) {
       PathPtr_t leaf = flat->pathAtRank(i);
+      if (leaf->length() <= 1e-9) {
+        portions.push_back(leaf);
+        continue;
+      }
       std::vector<value_type> params{leaf->timeRange().first,
                                      leaf->timeRange().second};
       InterpolatedPathPtr_t interpolated =
@@ -463,11 +467,15 @@ PathVectorPtr_t TOPPRA::optimize(const PathVectorPtr_t& path) {
     }
   }
 
-  // Time each portion from rest to rest.
+  // Time each portion from rest to rest. Keep the portions without motion,
+  // such as grasps, for their transitions.
   PathVectorPtr_t res =
       PathVector::create(path->outputSize(), path->outputDerivativeSize());
   for (const PathPtr_t& portion : portions) {
-    if (portion->length() <= 1e-9) continue;
+    if (portion->length() <= 1e-9) {
+      res->appendPath(portion);
+      continue;
+    }
     if (portion->length() < 1e-6)
       throw std::invalid_argument(
           "Path portion is too short for TOPPRA timing");
