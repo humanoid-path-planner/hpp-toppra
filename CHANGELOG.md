@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [toppra] Keep path portions without motion and their transitions
 - [pyproject] Add authors, maintainers and project URLs; fix the package.xml website URL
 - [CMake] Set the install RPATH of the library and the Python bindings, for relocatable installs (pip wheels)
+- [pyproject] Declare the BSD-2-Clause license of the LICENSE file in pyproject.toml and package.xml
 
 ## [9.0.2] - 2026-07-24
 
