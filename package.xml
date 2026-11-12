@@ -8,7 +8,7 @@
   <author>Paul Sardin</author>
   <maintainer email='guilhem.saurel@laas.fr'>Guilhem Saurel</maintainer>
   <license>LGPL</license>
-  <url type='website'>https://github.com/jmirabel/hpp-toppra</url>
+  <url type='website'>https://github.com/humanoid-path-planner/hpp-toppra</url>
 
   <depend>hpp_python</depend>
   <depend>toppra</depend>
