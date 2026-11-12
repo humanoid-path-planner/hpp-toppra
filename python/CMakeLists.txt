@@ -29,12 +29,14 @@ set(LIBNAME "bindings")
 set(SOURCE_FILES pyhpp_toppra/toppra.cc pyhpp_toppra/bindings.cc)
 
 add_library(${MODULE} SHARED ${SOURCE_FILES})
+get_relative_rpath(${PYTHON_SITELIB}/${MODULE} ${MODULE}_INSTALL_RPATH)
 set_target_properties(
     ${MODULE}
     PROPERTIES
         PREFIX ""
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}
         LIBRARY_OUTPUT_NAME ${LIBNAME}
+        INSTALL_RPATH "${${MODULE}_INSTALL_RPATH}"
 )
 target_link_boost_python(${MODULE} PUBLIC)
 target_link_libraries(
