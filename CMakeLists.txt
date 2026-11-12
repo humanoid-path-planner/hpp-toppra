@@ -72,6 +72,11 @@ target_link_libraries(
     PUBLIC hpp-python::hpp-python hpp-core::hpp-core toppra::toppra
 )
 target_include_directories(hpp-toppra PUBLIC $<INSTALL_INTERFACE:include>)
+get_relative_rpath(lib ${PROJECT_NAME}_INSTALL_RPATH)
+set_target_properties(
+    ${PROJECT_NAME}
+    PROPERTIES INSTALL_RPATH "${${PROJECT_NAME}_INSTALL_RPATH}"
+)
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
 add_subdirectory(python)

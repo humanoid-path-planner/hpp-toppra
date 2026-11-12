@@ -8,6 +8,11 @@ requires = [
 ]
 
 [project]
+authors = [
+  {name = "Florent Lamiraux"},
+  {name = "Joseph Mirabel"},
+  {name = "Paul Sardin"}
+]
 dependencies = [
   "cmeel-boost ~= 1.90.0",
   "cmeel-toppra",
@@ -15,8 +20,16 @@ dependencies = [
 ]
 description = "Bridge between HPP and TOPPRA"
 license = "LGPL-3.0-or-later"
+maintainers = [
+  {email = "guilhem.saurel@laas.fr", name = "Guilhem Saurel"}
+]
 name = "hpp-toppra"
 version = "9.0.2"
+
+[project.urls]
+homepage = "https://github.com/humanoid-path-planner/hpp-toppra"
+issues = "https://github.com/humanoid-path-planner/hpp-toppra/issues"
+repository = "https://github.com/humanoid-path-planner/hpp-toppra"
 
 [tool.tomlsort]
 all = true
